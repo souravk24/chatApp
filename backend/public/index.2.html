@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Application</title>
+    <style>
+        /* Basic styles for the chat application */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f7f7f7;
+            margin: 0;
+            padding: 0;
+        }
+
+        .chat-container {
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            height: 80vh;
+        }
+
+        .chat-header {
+            background-color: #007bff;
+            color: #fff;
+            padding: 10px;
+            text-align: center;
+            border-radius: 10px 10px 0 0;
+        }
+
+        .messages {
+            flex-grow: 1;
+            padding: 10px;
+            overflow-y: auto;
+            max-height: 500px;
+        }
+
+        .message {
+            padding: 8px 15px;
+            margin: 5px;
+            border-radius: 15px;
+            max-width: 70%;
+            clear: both;
+        }
+
+        .sent {
+            background-color: #007bff;
+            color: white;
+            align-self: flex-end;
+        }
+
+        .received {
+            background-color: #f1f1f1;
+            color: black;
+            align-self: flex-start;
+        }
+
+        .input-container {
+            display: flex;
+            margin-top: 10px;
+            justify-content: space-between;
+        }
+
+        .input-container input {
+            width: 45%;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+
+        .input-container button {
+            padding: 10px 15px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .input-container button:hover {
+            background-color: #0056b3;
+        }
+
+        .clear-btn {
+            background-color: #dc3545;
+            margin-top: 10px;
+            padding: 10px;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .clear-btn:hover {
+            background-color: #c82333;
+        }
+
+        .timestamp {
+            font-size: 12px;
+            color: #888;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="chat-container">
+    <div class="chat-header">
+        <h2>Real-time Chat</h2>
+    </div>
+    <div class="messages" id="message-container"></div>
+
+    <!-- Sender and Receiver ID Inputs -->
+    <div class="input-container">
+        <input type="text" id="senderId" placeholder="Your User ID" />
+        <input type="text" id="receiverId" placeholder="Receiver's User ID" />
+    </div>
+
+    <!-- Message Input and Send Button -->
+    <div class="input-container">
+        <input type="text" id="message" placeholder="Type a message" />
+        <button id="send-btn">Send</button>
+    </div>
+
+    <!-- Load Previous Chat Button -->
+    <button id="load-chat-btn">Load All Previous Chat</button>
+
+    <!-- Clear Chat Button -->
+    <button class="clear-btn" onclick="clearChat()">Clear Chat</button>
+</div>
+
+<script src="https://cdn.socket.io/4.6.0/socket.io.min.js"></script>
+<script>
+    const socket = io('http://localhost:8001'); // Connect to the backend
+    let senderId = '';
+    let receiverId = '';
+
+    const senderIdInput = document.getElementById('senderId');
+    const receiverIdInput = document.getElementById('receiverId');
+    const messageInput = document.getElementById('message');
+    const sendBtn = document.getElementById('send-btn');
+    const messageContainer = document.getElementById('message-container');
+    const loadChatBtn = document.getElementById('load-chat-btn');
+
+    // Register senderId when entered
+    senderIdInput.addEventListener('input', (e) => {
+        senderId = e.target.value;
+        socket.emit('register', senderId); // Register sender
+    });
+
+    // Update receiverId and load previous messages when entered
+    receiverIdInput.addEventListener('input', (e) => {
+        receiverId = e.target.value;
+        loadPreviousMessages(senderId, receiverId);  // Load previous messages from API
+    });
+
+    // Send message on button click
+    sendBtn.addEventListener('click', () => {
+        const message = messageInput.value.trim();
+        if (senderId && receiverId && message) {
+            socket.emit('sendMessage', { senderId, receiverId, message });
+            messageInput.value = ''; // Clear the input box
+        }
+    });
+
+    // Load previous messages
+    async function loadPreviousMessages(senderId, receiverId) {
+        if (senderId && receiverId) {
+            try {
+                const response = await fetch(`/api/messages/chat/${senderId}/${receiverId}`);
+                if (!response.ok) {
+                    throw new Error('Failed to load messages');
+                }
+
+                const messages = await response.json();
+                messageContainer.innerHTML = ''; // Clear the message container
+
+                // Display each message
+                messages.forEach((message) => {
+                    const messageDiv = document.createElement('div');
+                    messageDiv.classList.add('message');
+
+                    const sender = message.sender === senderId ? 'You' : receiverId;
+                    const timestamp = new Date(message.timestamp).toLocaleString();
+                    const messageClass = message.sender === senderId ? 'sent' : 'received';
+
+                    messageDiv.classList.add(messageClass);
+                    messageDiv.innerHTML = `
+                        <p><span class="sender">${sender}</span>: ${message.message}</p>
+                        <p class="timestamp">${timestamp}</p>
+                    `;
+                    messageContainer.appendChild(messageDiv);
+                });
+
+                messageContainer.scrollTop = messageContainer.scrollHeight; // Scroll to the bottom
+            } catch (error) {
+                console.error('Error loading messages:', error);
+            }
+        }
+    }
+
+    // Real-time message reception
+    socket.on('receiveMessage', (message) => {
+        const sender = message.sender === senderId ? 'You' : receiverId;
+        const timestamp = new Date(message.timestamp).toLocaleString();
+        const messageClass = message.sender === senderId ? 'sent' : 'received';
+
+        const messageDiv = document.createElement('div');
+        messageDiv.classList.add('message', messageClass);
+        messageDiv.innerHTML = `
+            <p><span class="sender">${sender}</span>: ${message.message}</p>
+            <p class="timestamp">${timestamp}</p>
+        `;
+        messageContainer.appendChild(messageDiv);
+
+        messageContainer.scrollTop = messageContainer.scrollHeight; // Scroll to the bottom
+    });
+
+    // Clear the chat window
+    function clearChat() {
+        messageContainer.innerHTML = '';
+    }
+
+    // Load all previous messages when button is clicked
+    loadChatBtn.addEventListener('click', () => {
+        loadPreviousMessages(senderId, receiverId);
+    });
+</script>
+
+</body>
+</html>

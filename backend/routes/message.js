@@ -6,6 +6,6 @@ const router = express.Router();
 router.post('/send', sendMessage);
 
 // Route for fetching chat messages between two users
-router.get('/chat/:userId/:friendId', getMessages);
+router.get('/chat/:senderId/:receiverId', getMessages);
 
 module.exports = router;

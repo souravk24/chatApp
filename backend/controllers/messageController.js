@@ -1,7 +1,7 @@
 const Message = require('../models/message');
 const User = require('../models/user');
 
-// Function to handle sending messages (via HTTP or Socket.IO)
+// Function to handle sending messages (via HTTP or Socket.IO)---Normal
 const sendMessage = async (socket, data, users) => {
   const { senderId, receiverId, message } = data;
 
@@ -31,7 +31,7 @@ const sendMessage = async (socket, data, users) => {
     }
 
     // Optionally, send the message back to the sender for confirmation
-    socket.emit('receiveMessage', newMessage);
+    //socket.emit('receiveMessage', newMessage);
 
   } catch (error) {
     console.error(error);
@@ -43,22 +43,23 @@ const sendMessage = async (socket, data, users) => {
 const getMessages = async (req, res) => {
   const { senderId, receiverId } = req.params;
   if (!senderId || !receiverId) {
-    return res.send('Required: senderId, receiverId');
+      return res.send('Required: senderId, receiverId');
   }
 
-  try {
-    const messages = await Message.find({
-      $or: [
-        { sender: senderId, receiver: receiverId },
-        { sender: receiverId, receiver: senderId },
-      ],
-    }).sort({ timestamp: 1 });
+  try { 
+      const messages = await Message.find({
+          $or: [
+              { sender: senderId, receiver: receiverId },
+              { sender: receiverId, receiver: senderId }
+          ]
+      }).sort({ timestamp: 1 }); // Sort messages by timestamp in ascending order
 
-    res.status(200).json(messages);
+      res.status(200).json(messages);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Error fetching messages' });
+      console.error(err);
+      res.status(500).json({ message: 'Error fetching messages' });
   }
 };
+
 
 module.exports = { sendMessage, getMessages };

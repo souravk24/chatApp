@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat App</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        /* General reset */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            padding: 20px;
+        }
+
+        #chat-container {
+            width: 100%;
+            max-width: 800px;
+            height: 80%;
+            border-radius: 10px;
+            border: 1px solid #ccc;
+            display: flex;
+            flex-direction: column;
+            background-color: white;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Header section */
+        #chat-header {
+            background-color: #007bff;
+            color: white;
+            padding: 15px;
+            border-radius: 10px 10px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        #chat-header h2 {
+            font-size: 18px;
+        }
+
+        /* Message container */
+        #message-container {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border-radius: 0 0 10px 10px;
+            max-height: calc(100% - 120px);
+        }
+
+        .message {
+            margin-bottom: 15px;
+            padding: 10px;
+            border-radius: 8px;
+            max-width: 80%;
+            font-size: 14px;
+        }
+
+        /* Sent messages */
+        .sent {
+            background-color: #007bff;
+            color: white;
+            margin-left: auto;
+            border-bottom-left-radius: 0;
+        }
+
+        /* Received messages */
+        .received {
+            background-color: #f1f1f1;
+            color: #333;
+            margin-right: auto;
+            border-bottom-right-radius: 0;
+        }
+
+        /* Message timestamp */
+        .timestamp {
+            font-size: 12px;
+            color: #888;
+            margin-top: 5px;
+            text-align: right;
+        }
+
+        /* Input box and send button */
+        #message-box {
+            display: flex;
+            padding: 15px;
+            background-color: #fff;
+            border-top: 1px solid #ccc;
+        }
+
+        #message-box input {
+            flex-grow: 1;
+            padding: 12px 15px;
+            border: 1px solid #ccc;
+            border-radius: 25px;
+            font-size: 14px;
+            margin-right: 10px;
+        }
+
+        #message-box button {
+            padding: 12px 15px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        #message-box button:hover {
+            background-color: #0056b3;
+        }
+
+        /* Sender and Receiver ID inputs */
+        .user-inputs {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background-color: #fff;
+            padding: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .user-inputs input {
+            padding: 8px 12px;
+            border: 1px solid #ccc;
+            border-radius: 25px;
+            font-size: 14px;
+        }
+
+        /* For responsiveness on mobile devices */
+        @media (max-width: 768px) {
+            #chat-container {
+                width: 100%;
+                height: 100%;
+                border-radius: 0;
+                box-shadow: none;
+            }
+
+            #message-box input {
+                font-size: 12px;
+            }
+
+            #message-box button {
+                font-size: 12px;
+            }
+
+            .user-inputs {
+                position: absolute;
+                bottom: 50px;
+                left: 50%;
+                transform: translateX(-50%);
+                gap: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Chat Container -->
+<div id="chat-container">
+    <div id="chat-header">
+        <h2>Chat with <span id="receiver-name">User</span></h2>
+        <button onclick="clearChat()">Clear Chat</button>
+    </div>
+
+    <!-- Messages Container -->
+    <div id="message-container"></div>
+
+    <!-- Message Input Box -->
+    <div id="message-box">
+        <input type="text" id="message" placeholder="Type a message..." />
+        <button id="send-btn">Send</button>
+    </div>
+</div>
+
+<!-- Sender and Receiver ID Inputs -->
+<div class="user-inputs">
+    <input type="text" id="senderId" placeholder="Your ID" />
+    <input type="text" id="receiverId" placeholder="Receiver ID" />
+</div>
+
+<!-- Socket.IO Client -->
+<script src="https://cdn.jsdelivr.net/npm/socket.io-client@4.0.0/dist/socket.io.min.js"></script>
+<script>
+    const socket = io('http://localhost:8001'); // Connect to the backend
+    let senderId = ''; // Initialize senderId
+    let receiverId = ''; // Initialize receiverId
+
+    const senderIdInput = document.getElementById('senderId');
+    const receiverIdInput = document.getElementById('receiverId');
+    const messageInput = document.getElementById('message');
+    const sendBtn = document.getElementById('send-btn');
+    const messageContainer = document.getElementById('message-container');
+    const receiverNameElement = document.getElementById('receiver-name');
+
+    // Register the sender when their ID is input
+    senderIdInput.addEventListener('input', (e) => {
+        senderId = e.target.value;
+        socket.emit('register', senderId); // Register sender
+    });
+
+    // Update the receiverId and load previous messages when receiverId is input
+    receiverIdInput.addEventListener('input', (e) => {
+        receiverId = e.target.value;
+        receiverNameElement.textContent = receiverId;
+        loadPreviousMessages(senderId, receiverId);
+    });
+
+    // Send a message when the user clicks the send button
+    sendBtn.addEventListener('click', () => {
+        const message = messageInput.value.trim();
+        if (senderId && receiverId && message) {
+            socket.emit('sendMessage', { senderId, receiverId, message });
+            messageInput.value = ''; // Clear the input box
+        }
+    });
+
+    // Load previous messages between the sender and receiver
+    async function loadPreviousMessages(senderId, receiverId) {
+        if (senderId && receiverId) {
+            try {
+                const response = await fetch(`/api/messages/${senderId}/${receiverId}`);
+                const messages = await response.json();
+                messageContainer.innerHTML = ''; // Clear the message container
+
+                // Display all the previous messages
+                messages.forEach((message) => {
+                    const messageDiv = document.createElement('div');
+                    messageDiv.classList.add('message');
+
+                    const sender = message.sender === senderId ? 'You' : receiverId;
+                    const timestamp = new Date(message.timestamp).toLocaleString();
+                    const messageClass = message.sender === senderId ? 'sent' : 'received';
+
+                    messageDiv.classList.add(messageClass);
+                    messageDiv.innerHTML = `
+                        <p><span class="sender">${sender}</span>: ${message.message}</p>
+                        <p class="timestamp">${timestamp}</p>
+                    `;
+                    messageContainer.appendChild(messageDiv);
+                });
+
+                messageContainer.scrollTop = messageContainer.scrollHeight; // Scroll to the bottom
+            } catch (error) {
+                console.error('Error loading messages:', error);
+            }
+        }
+    }
+
+    // Real-time message reception
+    socket.on('receiveMessage', (message) => {
+        const sender = message.sender === senderId ? 'You' : receiverId;
+        const timestamp = new Date(message.timestamp).toLocaleString();
+        const messageClass = message.sender === senderId ? 'sent' : 'received';
+
+        const messageDiv = document.createElement('div');
+        messageDiv.classList.add('message', messageClass);
+        messageDiv.innerHTML = `
+            <p><span class="sender">${sender}</span>: ${message.message}</p>
+            <p class="timestamp">${timestamp}</p>
+        `;
+        messageContainer.appendChild(messageDiv);
+
+        messageContainer.scrollTop = messageContainer.scrollHeight; // Scroll to the bottom
+    });
+
+    // Function to clear the chat window
+    function clearChat() {
+        messageContainer.innerHTML = '';
+    }
+</script>
+
+</body>
+</html>
