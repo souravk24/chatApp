@@ -1,0 +1,10 @@
+# Define text files for Git to treat as text
+*.js text
+*.json text
+*.md text
+
+# Force Git to always treat `.sh` files as executable
+*.sh text eol=lf
+
+# Example to normalize line endings in files
+*.html text eol=lf

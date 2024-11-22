@@ -1,0 +1,11 @@
+/backend
+  /models
+    user.js
+    message.js
+  /routes
+    auth.js
+    message.js
+  /controllers
+    authController.js
+    messageController.js
+  server.js
