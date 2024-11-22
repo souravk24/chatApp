@@ -6,6 +6,7 @@ const http = require('http');
 const port = 8001;
 const authRoutes = require('./routes/auth');
 const messageRoutes = require('./routes/message');
+const usersRoutes = require('./routes/users');
 const { sendMessage } = require('./controllers/messageController');
 
 const app = express();
@@ -22,6 +23,7 @@ const users = {};
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/messages', messageRoutes);
+app.use('/api/users', usersRoutes);
 
 mongoose.connect('mongodb+srv://web:Ju1eombBpv96hJJR@souravmongodb.zhuwg.mongodb.net/chatapp')
   .then(() => {
