@@ -100,8 +100,44 @@ const myConnection = async (req, res) => {
 
 
 
+//clear message - both side 
+
+// Function to clear messages between two users
+const clearMessages = async (req, res) => {
+  const { senderId, receiverId } = req.params;
+
+  if (!senderId || !receiverId) {
+    return res.status(400).send('Required: senderId, receiverId');
+  }
+
+  try {
+    // Deleting messages between sender and receiver
+    const result = await Message.deleteMany({
+      $or: [
+        { sender: senderId, receiver: receiverId },
+        { sender: receiverId, receiver: senderId }
+      ]
+    });
+
+    // Check if any messages were deleted
+    if (result.deletedCount === 0) {
+      return res.status(404).send('No messages found to delete');
+    }
+
+    res.status(200).json({ message: 'Messages cleared successfully', deletedCount: result.deletedCount });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Error clearing messages' });
+  }
+};
+
+
+
+
+
+
 
 
 module.exports = {
-  searchUser,myConnection
+  searchUser,myConnection,clearMessages
 };

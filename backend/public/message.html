@@ -278,12 +278,25 @@
         displayMessage(message);
     });
 
+
     // Clear the chat window
     function clearChat() {
-        messageContainer.innerHTML = '';
-        toggleMenu(); // Close the menu after action
+        toggleMenu();
+        messageContainer.innerHTML = ''; 
+        fetch(`/api/users/clearChat/${senderId}/${receiverId}`, {
+            method: 'DELETE', 
+        }).then(response => response.json())
+        .then(data => {
+            console.log('Messages cleared successfully:', data.message);
+        })
+        .catch(error => {
+            console.error('Error clearing chat:', error);
+        });
+
     }
 
+
+    
     // Load all messages
     function loadMessages() {
         messageContainer.innerHTML = '';  // Clear current messages
