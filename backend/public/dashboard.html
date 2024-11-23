@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat App</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <style>
+        /* Custom Body and Background */
+        body {
+            background-color: #f1f5f9;
+            height: 100vh;
+            margin: 0;
+            overflow-x: hidden;
+            font-family: 'Arial', sans-serif;
+        }
+
+        /* User List Section Styling */
+        .user-list {
+            max-height: 70vh;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+
+        .user-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            margin-bottom: 10px;
+            position: relative;
+        }
+
+        .user-item:hover {
+            background-color: #e9ecef;
+            transform: scale(1.02);
+        }
+
+        .user-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            margin-right: 15px;
+            object-fit: cover;
+        }
+
+        .user-name {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .three-dots {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+        }
+
+        .dropdown-menu {
+            min-width: 150px;
+        }
+
+        /* Floating Button */
+        .floating-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: rgb(206, 116, 218);
+            color: white;
+            border: none;
+            padding: 16px;
+            border-radius: 50%;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            font-size: 24px;
+            transition: transform 0.3s ease;
+        }
+
+        .floating-btn:hover {
+            transform: scale(1.1);
+        }
+
+        /* Modal Styling */
+        .search-modal .modal-dialog {
+            max-width: 100%;
+            width: 80%;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+
+        /* Loader Styling */
+        .loader {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: none;
+            z-index: 1000;
+        }
+
+        /* Modal Header Customization */
+        .modal-header {
+            background-color: #f8f9fa;
+            border-bottom: 2px solid #ddd;
+        }
+
+        .modal-title {
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <!-- Loader -->
+    <div class="loader" id="loader">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+
+    <!-- Chat App Layout -->
+    <div class="container d-flex justify-content-center align-items-start" style="min-height: 100vh; padding-top: 10px;">
+        <div class="col-12 col-md-4">
+            <h4 class="text-center mb-4">Chat App </h4>
+            <span class="username" id="current-username"> </span>
+            <span class="dropdown">
+                <button class="btn btn-link" data-bs-toggle="dropdown" aria-expanded="false">
+                    ***
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="javascript:;">Settings</a></li>
+                    <li><a class="dropdown-item" href="javascript:;" id="logout-btn">Logout</a></li>
+                </ul>
+            </span>
+
+            <input type="text" class="search-input mb-3" id="search-input" placeholder="Search users..." />
+            <div class="user-list" id="user-list">
+                <!-- User items will be populated here -->
+            </div>
+        </div>
+    </div>
+
+
+    
+
+    <!-- Search Modal -->
+    <div class="modal fade" id="searchModal" tabindex="-1" aria-labelledby="searchModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="searchModalLabel">Search Users</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="text" id="search-modal-input" class="form-control search-input" placeholder="Search for a user" />
+                    <div class="user-list mt-3" id="search-result-list">
+                        <!-- Search results will be shown here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Add Button -->
+    <button class="floating-btn" data-bs-toggle="modal" data-bs-target="#searchModal">
+        + <!-- Bootstrap Icons Search -->
+    </button>
+
+    <!-- JavaScript -->
+    <script>
+        // Function to get the current user from localStorage
+        const currentUserId = localStorage.getItem('userId');
+         // assuming the ID is stored as 'userId'
+         const currentUserName = localStorage.getItem('userName');
+         if (currentUserName) {
+            document.getElementById('current-username').textContent = currentUserName;
+        } else {
+            document.getElementById('current-username').textContent = 'Guest';
+            window.location.href = "index.html"; 
+        }
+
+        // Show Loader
+        function showLoader() {
+            document.getElementById('loader').style.display = 'block';
+        }
+
+        // Hide Loader
+        function hideLoader() {
+            document.getElementById('loader').style.display = 'none';
+        }
+
+        // Fetch all user connections from the API based on the current user ID
+        async function fetchUserConnections() {
+            showLoader(); // Show loader before the request
+            try {
+                const response = await fetch(`http://localhost:8001/api/users/connection/${currentUserId}`);
+                const data = await response.json();
+                return data;
+            } catch (error) {
+                console.error("Error fetching user connections:", error);
+            } finally {
+                hideLoader(); // Hide loader after the request
+            }
+        }
+
+        // Fetch all users based on the search key
+        async function searchUsers(searchKey) {
+            showLoader(); // Show loader before the request
+            try {
+                const response = await fetch(`http://localhost:8001/api/users/search/${searchKey}`);
+                const data = await response.json();
+                return data;
+            } catch (error) {
+                console.error("Error searching users:", error);
+            } finally {
+                hideLoader(); // Hide loader after the request
+            }
+        }
+
+        // Display users in the user list
+        function displayUserList(users) {
+            const userList = document.getElementById('user-list');
+            userList.innerHTML = ''; // Clear the previous user list
+            users.forEach(user => {
+                const userItem = document.createElement('div');
+                userItem.className = 'user-item';
+                userItem.setAttribute('data-id', user._id);
+                userItem.innerHTML = `
+                    <img src="${user.avtar}" alt="${user.username}" class="user-avatar">
+                    <span class="user-name">${user.username}</span>
+                `;
+                userItem.addEventListener('click', () => openChatPage(user._id)); // Open chat page on click
+                userList.appendChild(userItem);
+            });
+        }
+
+        // Display search results in the modal
+        function displaySearchResults(users) {
+            const searchResultList = document.getElementById('search-result-list');
+            searchResultList.innerHTML = ''; // Clear previous results
+            users.forEach(user => {
+                const userItem = document.createElement('div');
+                userItem.className = 'user-item';
+                userItem.setAttribute('data-id', user._id);
+                userItem.innerHTML = `
+                    <img src="${user.avtar}" alt="${user.username}" class="user-avatar">
+                    <span class="user-name">${user.username}</span>
+                `;
+                userItem.addEventListener('click', () => openChatPage(user._id)); // Open chat page on click
+                searchResultList.appendChild(userItem);
+            });
+        }
+
+        // Function to open the chat page
+        function openChatPage(userId) {
+            window.location.href = `message.html?receiver_id=${userId}`;
+        }
+
+        // Event listener for search input on the main page
+        document.getElementById('search-input').addEventListener('input', async function() {
+            const searchTerm = this.value.toLowerCase();
+            const connections = await fetchUserConnections();
+            const filteredUsers = connections.filter(user => user.username.toLowerCase().includes(searchTerm));
+            displayUserList(filteredUsers);
+        });
+
+        // Event listener for search input in the modal
+        document.getElementById('search-modal-input').addEventListener('input', async function() {
+            const searchTerm = this.value.toLowerCase();
+            const users = await searchUsers(searchTerm);
+            displaySearchResults(users);
+        });
+
+        // Initialize the user list on page load
+        window.onload = async () => {
+            const connections = await fetchUserConnections();
+            displayUserList(connections);
+        }
+    </script>
+
+    <script>
+    function logout() {
+            const confirmation = window.confirm("Are you sure you want to log out?");
+            
+            if (confirmation) {
+                localStorage.removeItem('userName');
+                localStorage.removeItem('userId');
+                localStorage.removeItem('token');
+                window.location.href = "index.html"; 
+            }
+        }
+
+        document.getElementById('logout-btn').addEventListener('click', logout);
+
+    </script>
+</body>
+</html>

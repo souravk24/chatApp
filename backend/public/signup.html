@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat App - Login</title>
+    <title>Chat App - Sign Up</title>
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
@@ -13,24 +13,24 @@
         <div class="col-md-6">
             <div class="card shadow-lg">
                 <div class="card-body">
-                    <h3 class="card-title text-center">Login</h3>
-                    <form id="login-form">
+                    <h3 class="card-title text-center">Sign Up</h3>
+                    <form id="signup-form">
                         <div class="mb-3">
-                            <label for="login-username" class="form-label">Username</label>
-                            <input type="text" class="form-control" id="login-username" name="username" required>
+                            <label for="signup-username" class="form-label">Username</label>
+                            <input type="text" class="form-control" id="signup-username" name="username" required>
                         </div>
                         <div class="mb-3">
-                            <label for="login-password" class="form-label">Password</label>
+                            <label for="signup-password" class="form-label">Password</label>
                             <div class="input-group">
-                                <input type="password" class="form-control" id="login-password" name="password" required>
-                                <button type="button" class="btn btn-outline-secondary" id="toggle-login-password">Show</button>
+                                <input type="password" class="form-control" id="signup-password" name="password" required>
+                                <button type="button" class="btn btn-outline-secondary" id="toggle-password">Show</button>
                             </div>
                         </div>
-                        <div id="login-error-message" class="alert alert-danger d-none"></div>
-                        <button type="submit" class="btn btn-success w-100">Login</button>
+                        <div id="error-message" class="alert alert-danger d-none"></div>
+                        <button type="submit" class="btn btn-success w-100">Sign Up</button>
                     </form>
                     <div class="mt-3 text-center">
-                        <p>Don't have an account? <a href="/signup.html">Sign up here</a></p>
+                        <p>Already have an account? <a href="/index.html">Login here</a></p>
                     </div>
                 </div>
             </div>
@@ -39,9 +39,9 @@
 
     <script>
         // Toggle password visibility
-        document.getElementById('toggle-login-password').addEventListener('click', function() {
-            const passwordField = document.getElementById('login-password');
-            const toggleButton = document.getElementById('toggle-login-password');
+        document.getElementById('toggle-password').addEventListener('click', function() {
+            const passwordField = document.getElementById('signup-password');
+            const toggleButton = document.getElementById('toggle-password');
             if (passwordField.type === 'password') {
                 passwordField.type = 'text';
                 toggleButton.textContent = 'Hide';
@@ -51,13 +51,13 @@
             }
         });
 
-        // Login form submission
-        document.getElementById('login-form').addEventListener('submit', async function(e) {
+        // Signup form submission
+        document.getElementById('signup-form').addEventListener('submit', async function(e) {
             e.preventDefault();
-            const username = document.getElementById('login-username').value;
-            const password = document.getElementById('login-password').value;
+            const username = document.getElementById('signup-username').value;
+            const password = document.getElementById('signup-password').value;
 
-            const response = await fetch('http://localhost:8001/api/auth/login', {
+            const response = await fetch('http://localhost:8001/api/auth/signup', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -72,13 +72,13 @@
                 localStorage.setItem('token', data.token);
                 localStorage.setItem('userId', data.id);
                 localStorage.setItem('userName', data.name);
-                alert('Login Successful!');
-                // Redirect to the chat page
+                alert('Sign Up Successful!');
+                // Redirect to login page
                 window.location.href = '/dashboard.html';
             } else {
                 // Show the error message
                 const errorMessage = data.message || 'An error occurred';
-                const errorDiv = document.getElementById('login-error-message');
+                const errorDiv = document.getElementById('error-message');
                 errorDiv.textContent = errorMessage;
                 errorDiv.classList.remove('d-none');
             }

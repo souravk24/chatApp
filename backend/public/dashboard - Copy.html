@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat App</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <style>
+        /* Custom CSS */
+        body {
+            background-color: #f8f9fa;
+            height: 100vh;
+            margin: 0;
+            overflow-x: hidden;
+        }
+        .user-list {
+            max-height: 70vh; /* Make the user list scrollable */
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+        .user-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            cursor: pointer;
+            border-bottom: 1px solid #ddd;
+            border-radius: 8px;
+            transition: background-color 0.3s ease;
+        }
+        .user-item:hover {
+            background-color: #e9ecef;
+        }
+        .user-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            margin-right: 15px;
+        }
+        .user-name {
+            font-weight: bold;
+        }
+        .floating-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: #26ff00c2;
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 50%;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            cursor: pointer;
+        }
+        .search-modal .modal-dialog {
+            max-width: 100%;
+        }
+        .search-input {
+            width: 100%;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Chat App Layout -->
+    <div class="container d-flex justify-content-center align-items-start" style="min-height: 100vh; padding-top: 60px;">
+        <!-- User List Section (Fixed at the Top) -->
+        <div class="col-12 col-md-4">
+            <h4 class="text-center">Users</h4>
+            <input type="text" class="search-input mb-3" id="search-input" placeholder="Search users..." />
+            <div class="user-list" id="user-list">
+                <!-- User items will be populated here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Search Modal (for searching users) -->
+    <div class="modal fade" id="searchModal" tabindex="-1" aria-labelledby="searchModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="searchModalLabel">Search Users</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="text" id="search-modal-input" class="form-control" placeholder="Search for a user" />
+                    <div class="user-list mt-3" id="search-result-list">
+                        <!-- Search results will be shown here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Add Button -->
+    <button class="floating-btn" data-bs-toggle="modal" data-bs-target="#searchModal">
+        + <!-- FontAwesome search icon -->
+    </button>
+
+    <!-- JavaScript -->
+    <script>
+        // Sample users data (replace with API response in real-world scenarios)
+        const users = [
+            { id: 1, username: "Alice", avatar: "https://randomuser.me/api/portraits/women/1.jpg" },
+            { id: 2, username: "Bob", avatar: "https://randomuser.me/api/portraits/men/1.jpg" },
+            { id: 3, username: "Charlie", avatar: "https://randomuser.me/api/portraits/men/2.jpg" },
+            { id: 4, username: "David", avatar: "https://randomuser.me/api/portraits/men/3.jpg" }
+        ];
+
+        // Display all users
+        function displayUserList(users) {
+            const userList = document.getElementById('user-list');
+            userList.innerHTML = ''; // Clear the list before re-populating
+            users.forEach(user => {
+                const userItem = document.createElement('div');
+                userItem.className = 'user-item';
+                userItem.setAttribute('data-id', user.id);
+                userItem.innerHTML = `
+                    <img src="${user.avatar}" alt="${user.username}" class="user-avatar">
+                    <span class="user-name">${user.username}</span>
+                `;
+                userItem.addEventListener('click', () => openChatPage(user.id)); // Open chat page on click
+                userList.appendChild(userItem);
+            });
+        }
+
+        // Open chat page for the selected user
+        function openChatPage(userId) {
+            window.location.href = `message.html?receiver_id=${userId}`;
+        }
+
+        // Search users based on input in the main page
+        document.getElementById('search-input').addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            const filteredUsers = users.filter(user => user.username.toLowerCase().includes(searchTerm));
+            displayUserList(filteredUsers);
+        });
+
+        // Display search results in the modal
+        function displaySearchResults(users) {
+            const searchResultList = document.getElementById('search-result-list');
+            searchResultList.innerHTML = ''; // Clear previous results
+            users.forEach(user => {
+                const userItem = document.createElement('div');
+                userItem.className = 'user-item';
+                userItem.setAttribute('data-id', user.id);
+                userItem.innerHTML = `
+                    <img src="${user.avatar}" alt="${user.username}" class="user-avatar">
+                    <span class="user-name">${user.username}</span>
+                `;
+                userItem.addEventListener('click', () => openChatPage(user.id)); // Open chat page on click
+                searchResultList.appendChild(userItem);
+            });
+        }
+
+        // Search users based on input in the modal
+        document.getElementById('search-modal-input').addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            const filteredUsers = users.filter(user => user.username.toLowerCase().includes(searchTerm));
+            displaySearchResults(filteredUsers);
+        });
+
+        // Add new user to the user list
+        function addNewUser(user) {
+            const userList = document.getElementById('user-list');
+            const userItem = document.createElement('div');
+            userItem.className = 'user-item';
+            userItem.setAttribute('data-id', user.id);
+            userItem.innerHTML = `
+                <img src="${user.avatar}" alt="${user.username}" class="user-avatar">
+                <span class="user-name">${user.username}</span>
+            `;
+            userItem.addEventListener('click', () => openChatPage(user.id)); // Open chat page on click
+            userList.appendChild(userItem);
+
+            // Close the search modal
+            const searchModal = new bootstrap.Modal(document.getElementById('searchModal'));
+            searchModal.hide();
+        }
+
+        // Initialize user list
+        displayUserList(users);
+    </script>
+</body>
+</html>

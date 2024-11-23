@@ -23,6 +23,7 @@ const sendMessage = async (socket, data, users) => {
 
     // Emit the message to the receiver's socket using their socketId
     if (users[receiverId]) {
+      console.log(`Receiver's socket ID found: ${users[receiverId]}`);
       // Emit the message to the receiver via their socketId
       socket.to(users[receiverId]).emit('receiveMessage', newMessage);
       console.log(`Message sent from ${senderId} to ${receiverId}: ${message}`);

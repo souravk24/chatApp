@@ -17,7 +17,7 @@ const signUp = async (req, res) => {
     await newUser.save();
     
     const token = jwt.sign({ userId: newUser._id }, 'yourSecretKey', { expiresIn: '1h' });
-    res.status(201).json({ token ,'id':newUser._id });
+    res.status(201).json({ token ,'id':newUser._id,name:newUser.username });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Error creating user' });
@@ -42,7 +42,7 @@ const login = async (req, res) => {
     }
 
     const token = jwt.sign({ userId: user._id }, 'yourSecretKey', { expiresIn: '1h' });
-    res.status(200).json({ token,'id':user._id });
+    res.status(200).json({ token,'id':user._id,name:user.username });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Error logging in' });
